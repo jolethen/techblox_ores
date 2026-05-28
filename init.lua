@@ -1,6 +1,6 @@
 local modname = minetest.get_current_modname()
 
--- Explicitly create the global table so other scripts can access the function
+-- Create the global manager table
 resource_zones = {}
 
 -- 1. THE DEPLETED PLACEHOLDER BLOCK
@@ -42,7 +42,51 @@ function resource_zones.start_regen_timer(pos, original_ore_name, cooldown_secon
     end)
 end
 
--- 3. CRASH SAFETY NET (LBM)
+-- 3. RENEWABLE COAL ORE (2 Second Cooldown)
+minetest.register_node(modname .. ":renewable_coal", {
+    description = "Renewable Coal Ore",
+    tiles = {"default_stone.png^default_mineral_coal.png"},
+    groups = {cracky = 3},
+    drop = "", -- Handled programmatically
+
+    after_dig_node = function(pos, oldnode, oldmetadata, digger)
+        -- Give item to player
+        if digger and digger:is_player() then
+            local inv = digger:get_inventory()
+            local leftover = inv:add_item("main", "default:coal_lump 1")
+            if not leftover:is_empty() then
+                minetest.add_item(pos, leftover)
+            end
+        end
+
+        -- Trigger the manager with a 2-second cooldown
+        resource_zones.start_regen_timer(pos, modname .. ":renewable_coal", 2)
+    end,
+})
+
+-- 4. RENEWABLE IRON ORE (10 Second Cooldown)
+minetest.register_node(modname .. ":renewable_iron", {
+    description = "Renewable Iron Ore",
+    tiles = {"default_stone.png^default_mineral_iron.png"},
+    groups = {cracky = 3},
+    drop = "", -- Handled programmatically
+
+    after_dig_node = function(pos, oldnode, oldmetadata, digger)
+        -- Give item to player
+        if digger and digger:is_player() then
+            local inv = digger:get_inventory()
+            local leftover = inv:add_item("main", "default:iron_lump 1")
+            if not leftover:is_empty() then
+                minetest.add_item(pos, leftover)
+            end
+        end
+
+        -- Trigger the manager with a 10-second cooldown
+        resource_zones.start_regen_timer(pos, modname .. ":renewable_iron", 10)
+    end,
+})
+
+-- 5. CRASH SAFETY NET (LBM)
 minetest.register_lbm({
     name = modname .. ":fix_stranded_placeholders",
     nodenames = {modname .. ":depleted_stone"},
