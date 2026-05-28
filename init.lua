@@ -1,14 +1,9 @@
 local modname = minetest.get_current_modname()
 
--- 1. UNBREAKABLE ZONE WALL
-minetest.register_node(modname .. ":mine_wall", {
-    description = "Indestructible Mine Structure Brick",
-    tiles = {"default_desert_stone_brick.png^[colorize:#000000:40"}, 
-    groups = {immortal = 1}, 
-    diggable = false,
-})
+-- Explicitly create the global table so other scripts can access the function
+resource_zones = {}
 
--- 2. THE DEPLETED PLACEHOLDER BLOCK
+-- 1. THE DEPLETED PLACEHOLDER BLOCK
 minetest.register_node(modname .. ":depleted_stone", {
     description = "Depleted Stone (Regenerating...)",
     tiles = {"default_stone.png^[colorize:#111111:150"}, 
@@ -17,19 +12,18 @@ minetest.register_node(modname .. ":depleted_stone", {
     pointable = true,
 })
 
--- 3. THE REGENERATION TIMER FUNCTION
--- This can be called by any ore script on your server
+-- 2. THE REGENERATION TIMER FUNCTION
 function resource_zones.start_regen_timer(pos, original_ore_name, cooldown_seconds)
-    -- 1. Instantly swap the dug block to the depleted placeholder
+    -- Instantly swap the dug block to the depleted placeholder
     minetest.set_node(pos, {name = modname .. ":depleted_stone"})
     
-    -- 2. Store what the block *used* to be inside its metadata (Crash Safety)
+    -- Store what the block used to be inside its metadata (Crash Safety)
     local meta = minetest.get_meta(pos)
     meta:set_string("restores_to", original_ore_name)
 
-    -- 3. Start the background countdown
+    -- Start the background countdown
     minetest.after(cooldown_seconds, function()
-        -- Only replace if it hasn't been modified by an admin/worldedit in the meantime
+        -- Only replace if it hasn't been modified/broken by an admin in the meantime
         if minetest.get_node(pos).name == modname .. ":depleted_stone" then
             -- Swap it back to the original ore block
             minetest.set_node(pos, {name = original_ore_name})
@@ -42,14 +36,13 @@ function resource_zones.start_regen_timer(pos, original_ore_name, cooldown_secon
                 maxpos = {x = pos.x + 0.5, y = pos.y + 0.5, z = pos.z + 0.5},
                 minvel = {x = -1, y = 1, z = -1},
                 maxvel = {x = 1, y = 3, z = 1},
-                texture = "default_stone.png^[colorize:#ffffff:100", -- White flash particles
+                texture = "default_stone.png^[colorize:#ffffff:100", 
             })
         end
     end)
 end
 
--- 4. CRASH SAFETY NET (LBM)
--- If the server restarts, this fixes any "stuck" placeholders instantly on chunk load
+-- 3. CRASH SAFETY NET (LBM)
 minetest.register_lbm({
     name = modname .. ":fix_stranded_placeholders",
     nodenames = {modname .. ":depleted_stone"},
