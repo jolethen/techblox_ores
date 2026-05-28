@@ -1,9 +1,9 @@
 local modname = minetest.get_current_modname()
 
--- Create the global manager table
+-- Create the master global table
 resource_zones = {}
 
--- 1. THE DEPLETED PLACEHOLDER BLOCK
+-- The Depleted Block (Shared placeholder for mined ores)
 minetest.register_node(modname .. ":depleted_stone", {
     description = "Depleted Stone (Regenerating...)",
     tiles = {"default_stone.png^[colorize:#111111:150"}, 
@@ -12,81 +12,55 @@ minetest.register_node(modname .. ":depleted_stone", {
     pointable = true,
 })
 
--- 2. THE REGENERATION TIMER FUNCTION
+-- Master Ore Timer Function
 function resource_zones.start_regen_timer(pos, original_ore_name, cooldown_seconds)
-    -- Instantly swap the dug block to the depleted placeholder
     minetest.set_node(pos, {name = modname .. ":depleted_stone"})
     
-    -- Store what the block used to be inside its metadata (Crash Safety)
     local meta = minetest.get_meta(pos)
     meta:set_string("restores_to", original_ore_name)
 
-    -- Start the background countdown
     minetest.after(cooldown_seconds, function()
-        -- Only replace if it hasn't been modified/broken by an admin in the meantime
         if minetest.get_node(pos).name == modname .. ":depleted_stone" then
-            -- Swap it back to the original ore block
             minetest.set_node(pos, {name = original_ore_name})
             
-            -- Add a quick burst of particles when it spawns back
             minetest.add_particlespawner({
-                amount = 12,
-                time = 0.2,
+                amount = 12, time = 0.2,
                 minpos = {x = pos.x - 0.5, y = pos.y - 0.5, z = pos.z - 0.5},
                 maxpos = {x = pos.x + 0.5, y = pos.y + 0.5, z = pos.z + 0.5},
-                minvel = {x = -1, y = 1, z = -1},
-                maxvel = {x = 1, y = 3, z = 1},
+                minvel = {x = -1, y = 1, z = -1}, maxvel = {x = 1, y = 3, z = 1},
                 texture = "default_stone.png^[colorize:#ffffff:100", 
             })
         end
     end)
 end
 
--- 3. RENEWABLE COAL ORE (2 Second Cooldown)
-minetest.register_node(modname .. ":renewable_coal", {
-    description = "Renewable Coal Ore",
-    tiles = {"default_stone.png^default_mineral_coal.png"},
-    groups = {cracky = 3},
-    drop = "", -- Handled programmatically
-
-    after_dig_node = function(pos, oldnode, oldmetadata, digger)
-        -- Give item to player
-        if digger and digger:is_player() then
-            local inv = digger:get_inventory()
-            local leftover = inv:add_item("main", "default:coal_lump 1")
-            if not leftover:is_empty() then
-                minetest.add_item(pos, leftover)
-            end
+-- Master Crop Stage Loop Function (No globalsteps!)
+-- Moves through stages sequentially based on the provided delay per stage
+function resource_zones.start_crop_growth(pos, stages, current_index, delay_per_stage)
+    if current_index > #stages then return end
+    
+    minetest.after(delay_per_stage, function()
+        -- Ensure an admin or player didn't completely replace the plant block with something else
+        local current_node = minetest.get_node(pos).name
+        local expected_node = stages[current_index - 1] or "farming:wheat_8" -- fallback/safety check
+        
+        -- If the current block matches the stage it was supposed to be in, advance it
+        if current_node == expected_node or string.find(current_node, "farming:") then
+            local next_stage = stages[current_index]
+            minetest.set_node(pos, {name = next_stage})
+            
+            -- Recurse to the next stage until fully grown
+            resource_zones.start_crop_growth(pos, stages, current_index + 1, delay_per_stage)
         end
+    end)
+end
 
-        -- Trigger the manager with a 2-second cooldown
-        resource_zones.start_regen_timer(pos, modname .. ":renewable_coal", 2)
-    end,
-})
+-- Load the secondary files safely
+local path = minetest.get_modpath(modname)
+dofile(path .. "/ores.lua")
+dofile(path .. "/crops.lua")
 
--- 4. RENEWABLE IRON ORE (10 Second Cooldown)
-minetest.register_node(modname .. ":renewable_iron", {
-    description = "Renewable Iron Ore",
-    tiles = {"default_stone.png^default_mineral_iron.png"},
-    groups = {cracky = 3},
-    drop = "", -- Handled programmatically
-
-    after_dig_node = function(pos, oldnode, oldmetadata, digger)
-        -- Give item to player
-        if digger and digger:is_player() then
-            local inv = digger:get_inventory()
-            local leftover = inv:add_item("main", "default:iron_lump 1")
-            if not leftover:is_empty() then
-                minetest.add_item(pos, leftover)
-            end
-        end
-
-        -- Trigger the manager with a 10-second cooldown
-        resource_zones.start_regen_timer(pos, modname .. ":renewable_iron", 10)
-    end,
-})
-
--- 5. CRASH SAFETY NET (LBM)
+-- CRASH SAFETY NET (LBM)
 minetest.register_lbm({
     name = modname .. ":fix_stranded_placeholders",
     nodenames = {modname .. ":depleted_stone"},
