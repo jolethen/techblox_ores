@@ -14,6 +14,18 @@ local renewable_ores = {
         drop_item = "default:iron_lump",
         cooldown = 10,
     },
+    earth = {
+        description = "Renewable Earth Rune Ore",
+        texture = "magic_materials_earth_rune_ore.png",
+        drop_item = "magic_materials:earth_rune",
+        cooldown = 15,
+    },
+    light = {
+        description = "Renewable Light Rune Ore",
+        texture = "magic_materials_light_rune_ore.png",
+        drop_item = "magic_materials:light_rune",
+        cooldown = 10,
+    },
 }
 
 -- Loop through the table to register nodes dynamically
