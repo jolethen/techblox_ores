@@ -4,7 +4,8 @@ local modname = minetest.get_current_modname()
 minetest.register_node(modname .. ":renewable_coal", {
     description = "Renewable Coal Ore",
     tiles = {"default_stone.png^default_mineral_coal.png"},
-    groups = {cracky = 3},
+    -- Added cant_to_protect = 1 to allow harvesting in protected areas
+    groups = {cracky = 3, cant_to_protect = 1},
     drop = "", 
 
     after_dig_node = function(pos, oldnode, oldmetadata, digger)
@@ -15,7 +16,11 @@ minetest.register_node(modname .. ":renewable_coal", {
                 minetest.add_item(pos, leftover)
             end
         end
-        resource_zones.start_regen_timer(pos, modname .. ":renewable_coal", 2)
+        
+        -- Start timer with a safety fallback check
+        if resource_zones and resource_zones.start_regen_timer then
+            resource_zones.start_regen_timer(pos, modname .. ":renewable_coal", 2)
+        end
     end,
 })
 
@@ -23,7 +28,8 @@ minetest.register_node(modname .. ":renewable_coal", {
 minetest.register_node(modname .. ":renewable_iron", {
     description = "Renewable Iron Ore",
     tiles = {"default_stone.png^default_mineral_iron.png"},
-    groups = {cracky = 3},
+    -- Added cant_to_protect = 1 to allow harvesting in protected areas
+    groups = {cracky = 3, cant_to_protect = 1},
     drop = "", 
 
     after_dig_node = function(pos, oldnode, oldmetadata, digger)
@@ -34,6 +40,10 @@ minetest.register_node(modname .. ":renewable_iron", {
                 minetest.add_item(pos, leftover)
             end
         end
-        resource_zones.start_regen_timer(pos, modname .. ":renewable_iron", 10)
+        
+        -- Start timer with a safety fallback check
+        if resource_zones and resource_zones.start_regen_timer then
+            resource_zones.start_regen_timer(pos, modname .. ":renewable_iron", 10)
+        end
     end,
 })
