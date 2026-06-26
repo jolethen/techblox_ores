@@ -1,48 +1,53 @@
 local modname = minetest.get_current_modname()
 
--- Register a dedicated MMO Wheat node for public zones
-minetest.register_node(modname .. ":mmo_wheat", {
-    description = "Public Resource Wheat (Regenerating)",
-    -- Uses the visual model and texture of fully grown vanilla wheat
+-- 1. REGISTER THE MMO BARLEY NODE (Fully Grown Stage)
+minetest.register_node(modname .. ":mmo_barley", {
+    description = "Public Resource Barley (Regenerating)",
     drawtype = "plantlike",
-    tiles = {"farming_wheat_8.png"},
-    inventory_image = "farming_wheat.png",
+    -- Set to stage 8 texture directly
+    tiles = {"x_farming_barley_8.png"}, 
+    inventory_image = "x_farming_barley_8.png",
     paramtype = "light",
     sunlight_propagates = true,
     walkable = false,
     buildable_to = true,
-    groups = {snappy = 3, flammable = 2, attached_node = 1},
+    groups = {snappy = 3, flammable = 2, attached_node = 1, plant = 1},
     selection_box = {
         type = "fixed",
         fixed = {-0.5, -0.5, -0.5, 0.5, 0.5, 0.5},
     },
 
+    -- Harvest only possible at full stage 8 maturity
     after_dig_node = function(pos, oldnode, oldmetadata, digger)
-        -- Give standard drops to the player
         if digger and digger:is_player() then
             local inv = digger:get_inventory()
-            local drop_wheat = inv:add_item("main", "farming:wheat 1")
-            local drop_seed = inv:add_item("main", "farming:seed_wheat 1")
             
-            if not drop_wheat:is_empty() then minetest.add_item(pos, drop_wheat) end
+            local barley_item = minetest.registered_items["farming:barley"] and "farming:barley 2" or "farming:barley_item 2"
+            local seed_item = "farming:seed_barley 1" or "farming:barley_seed 1"
+
+            -- Gives 2 Barley and 1 Seed directly to inventory
+            local drop_barley = inv:add_item("main", barley_item)
+            local drop_seed = inv:add_item("main", seed_item)
+            
+            if not drop_barley:is_empty() then minetest.add_item(pos, drop_barley) end
             if not drop_seed:is_empty() then minetest.add_item(pos, drop_seed) end
         end
 
-        -- Define the visual growth stages it will cycle through
+        -- Sequential steps: starts at 1, ticks to 3, ticks to 5, then hits your master block
         local stages = {
-            "farming:wheat_2",  
-            "farming:wheat_4",  
-            "farming:wheat_6",  
-            modname .. ":mmo_wheat"  -- Cycles back to this custom block at the end!
+            "farming:barley_1",  
+            "farming:barley_3",  
+            "farming:barley_5",  
+            modname .. ":mmo_barley"  
         }
 
-        -- 1 hour total (3600 seconds) / 4 stages = 900 seconds per stage
-        local delay_per_stage = 900 
+        -- 30 seconds / 3 shifts = 10 second delay between growth loops
+        local delay_per_stage = 10 
 
-        -- Reset the block to stage 1 instantly
-        minetest.set_node(pos, {name = "farming:seed_wheat"})
+        -- Immediately reset to the ground stage 1 on harvest
+        minetest.set_node(pos, {name = "farming:barley_1"})
 
-        -- Begin the growth chain reaction
-        resource_zones.start_crop_growth(pos, stages, 1, delay_per_stage)
+        -- Fire up the sequential loop starting at step 2 (farming:barley_3)
+        resource_zones.start_crop_growth(pos, stages, 2, delay_per_stage)
     end,
 })
