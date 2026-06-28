@@ -6,27 +6,27 @@ local renewable_ores = {
         description = "Renewable Coal Ore",
         texture = "default_mineral_coal.png",
         drop_item = "default:coal_lump",
-        cooldown = 2,
+        cooldown = 1800,
     },
     iron = {
         description = "Renewable Iron Ore",
         texture = "default_mineral_iron.png",
         drop_item = "default:iron_lump",
-        cooldown = 10,
+        cooldown = 1800,
     },
     earth = {
         description = "Renewable Earth Gemstone",
         -- FIXED: Explicitly telling the server to fetch this texture from the magic_materials mod assets
         texture = "magic_materials_earth_rune_ore.png^[combine:16x16:0,0=magic_materials_earth_rune_ore.png",
         drop_item = "magic_materials:earth_gem",
-        cooldown = 15,
+        cooldown = 3600,
     },
     light = {
         description = "Renewable Lightning Gemstone",
         -- FIXED: Explicitly telling the server to fetch this texture from the magic_materials mod assets
         texture = "magic_materials_light_rune_ore.png^[combine:16x16:0,0=magic_materials_light_rune_ore.png",
         drop_item = "magic_materials:lightning_gem",
-        cooldown = 10,
+        cooldown = 3600,
     },
 }
 
