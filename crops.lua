@@ -94,7 +94,7 @@ minetest.register_node(modname .. ":mmo_barley_8", {
             modname .. ":mmo_barley_8"  
         }
 
-        local delay_per_stage = 10
+        local delay_per_stage = 450
 
         -- Reset instantly to Stage 1
         minetest.set_node(pos, {name = modname .. ":mmo_barley_1"})
