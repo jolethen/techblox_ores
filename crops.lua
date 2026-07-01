@@ -86,6 +86,18 @@ minetest.register_node(modname .. ":mmo_barley_8", {
             digger:set_wielded_item(tool)
         end
 
+        -- WEEKLY QUEST SYSTEM INJECTION:
+        -- Forcefully report this harvest event to the weekly quest tracker file
+        if folks and folks.weekly and folks.weekly.chain then
+            -- Create a mock node object matching the expected internal target format
+            local mock_node = { name = modname .. ":mmo_barley_8" }
+            
+            -- Trigger the hook manually for the active player since standard dig callbacks don't fire here
+            for _, callback in ipairs(core.registered_on_dignodes) do
+                callback(pos, mock_node, {}, digger)
+            end
+        end
+
         -- 3. Transition states array
         local stages = {
             modname .. ":mmo_barley_1", 
