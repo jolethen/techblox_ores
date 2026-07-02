@@ -11,7 +11,6 @@ minetest.register_node(modname .. ":mmo_barley_1", {
     buildable_to = true,
     groups = {snappy = 3, flammable = 2, attached_node = 1, plant = 1, cant_to_protect = 1},
     drop = "", 
-    -- Bypasses protection entirely if someone tries to break it, but it drops nothing anyway
     on_dig = function(pos, node, digger)
         -- Do nothing, completely indestructible / non-harvestable early stage
     end,
@@ -45,7 +44,7 @@ minetest.register_node(modname .. ":mmo_barley_5", {
     on_dig = function(pos, node, digger) end,
 })
 
--- 4. REGISTER STAGE 8 (Fully Grown & Harvestable via custom on_dig Protection Bypass)
+-- 4. REGISTER STAGE 8 (Fully Grown & Harvestable)
 minetest.register_node(modname .. ":mmo_barley_8", {
     description = "Public Resource Barley (Fully Grown)",
     drawtype = "plantlike",
@@ -66,6 +65,8 @@ minetest.register_node(modname .. ":mmo_barley_8", {
     on_dig = function(pos, node, digger)
         if not digger or not digger:is_player() then return end
         
+        local player_name = digger:get_player_name()
+
         -- 1. Award items directly (2 Barley, 1 Seed)
         local inv = digger:get_inventory()
         local barley_item = minetest.registered_items["farming:barley"] and "farming:barley 2" or "farming:seed_barley 2"
@@ -76,6 +77,15 @@ minetest.register_node(modname .. ":mmo_barley_8", {
         
         if not drop_barley:is_empty() then minetest.add_item(pos, drop_barley) end
         if not drop_seed:is_empty() then minetest.add_item(pos, drop_seed) end
+
+        -- =========================================================================
+        -- SERVER METRIC HOOK: Track who harvested this crop for Weekly Quests
+        -- =========================================================================
+        if weeklyquests and weeklyquests.add_progress then
+            -- Pass the player name, action tracking key, and increment amount
+            weeklyquests.add_progress(player_name, "harvest_mmo_barley", 1)
+        end
+        -- =========================================================================
 
         -- 2. Handle tool wear for things like swords/shears (snappy group)
         local tool = digger:get_wielded_item()
